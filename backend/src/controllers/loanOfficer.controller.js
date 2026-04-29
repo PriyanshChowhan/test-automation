@@ -129,4 +129,32 @@ const acceptLoan = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getAllLoans, getLoanById, rejectLoan, acceptLoan };
+const resetLoan = asyncHandler(async (req, res, next) => {
+  try {
+    if (req.user.role !== "loanOfficer") {
+      throw new ApiError(403, "Access denied: Only loan officers can reset loans");
+    }
+
+    const { loanId } = req.params;
+
+    const loan = await LoanApplication.findById(loanId);
+    if (!loan) {
+      throw new ApiError(404, "Loan application not found");
+    }
+
+    if (loan.loan_status === "Pending") {
+      throw new ApiError(400, "Loan is already pending");
+    }
+
+    loan.loan_status = "Pending";
+    await loan.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, loan, "Loan status reset to Pending"));
+  } catch (error) {
+    next(error);
+  }
+});
+
+export { getAllLoans, getLoanById, rejectLoan, acceptLoan, resetLoan };

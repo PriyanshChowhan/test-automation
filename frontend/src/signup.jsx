@@ -39,7 +39,6 @@ const LoanApplication = () => {
     return errors;
   };
 
-  // Update password errors as user types
   React.useEffect(() => {
     if (password) {
       setPasswordErrors(validatePassword(password));
@@ -48,7 +47,6 @@ const LoanApplication = () => {
     }
   }, [password]);
 
-  // Check if passwords match
   React.useEffect(() => {
     if (confirmPassword) {
       if (password !== confirmPassword) {
@@ -61,8 +59,10 @@ const LoanApplication = () => {
     }
   }, [password, confirmPassword]);
 
+  // ✅ FIXED FUNCTION ONLY
   const onSubmit = async (data) => {
     const errors = validatePassword(data.password);
+
     if (errors.length > 0) {
       setPasswordErrors(errors);
       setMessage("");
@@ -79,12 +79,25 @@ const LoanApplication = () => {
     setMessage("");
 
     try {
-      await axios.post("http://localhost:8000/api/v1/register", { ...data, role: "applicant" });
+      await axios.post("http://localhost:8000/api/v1/register", {
+        ...data,
+        role: "applicant",
+      });
+
+      // ✅ only on success
       setMessage("Application submitted successfully!");
       reset();
       nav("/login");
+
     } catch (error) {
-      setMessage("Error submitting application.");
+      // ✅ show backend error properly
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Error submitting application.";
+
+      setMessage(backendMessage);
+      // ❌ no navigation here
     } finally {
       setLoading(false);
     }
@@ -97,13 +110,19 @@ const LoanApplication = () => {
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-slate-900">
-              Join <span className="bg-gradient-to-r from-pink-600 to-pink-500 bg-clip-text text-transparent">ऋृणflow</span>
+              Join{" "}
+              <span className="bg-gradient-to-r from-pink-600 to-pink-500 bg-clip-text text-transparent">
+                ऋृणflow
+              </span>
             </h2>
-            <p className="mt-2 text-slate-600">Create your account to get started</p>
+            <p className="mt-2 text-slate-600">
+              Create your account to get started
+            </p>
           </div>
-          
+
           <div className="bg-white/80 backdrop-blur-md shadow-sm rounded-xl p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Name
@@ -112,7 +131,7 @@ const LoanApplication = () => {
                   type="text"
                   {...register("name")}
                   required
-                  className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+                  className="w-full p-3 border border-slate-200 rounded-lg"
                   placeholder="Enter your full name"
                 />
               </div>
@@ -125,7 +144,7 @@ const LoanApplication = () => {
                   type="email"
                   {...register("email")}
                   required
-                  className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
+                  className="w-full p-3 border border-slate-200 rounded-lg"
                   placeholder="you@example.com"
                 />
               </div>
@@ -138,19 +157,23 @@ const LoanApplication = () => {
                   type="password"
                   {...register("password")}
                   required
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition ${
-                    passwordErrors.length > 0 ? "border-pink-500 bg-pink-50" : "border-slate-200"
+                  className={`w-full p-3 border rounded-lg ${
+                    passwordErrors.length > 0
+                      ? "border-pink-500 bg-pink-50"
+                      : "border-slate-200"
                   }`}
                   placeholder="••••••••"
                 />
+
                 {passwordErrors.length > 0 && (
                   <div className="mt-3 p-3 bg-pink-50 border border-pink-200 rounded-lg">
-                    <p className="text-xs font-medium text-pink-700 mb-2">Password requirements not met:</p>
+                    <p className="text-xs font-medium text-pink-700 mb-2">
+                      Password requirements not met:
+                    </p>
                     <ul className="space-y-1">
                       {passwordErrors.map((error, index) => (
-                        <li key={index} className="text-xs text-pink-600 flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{error}</span>
+                        <li key={index} className="text-xs text-pink-600">
+                          • {error}
                         </li>
                       ))}
                     </ul>
@@ -166,26 +189,32 @@ const LoanApplication = () => {
                   type="password"
                   {...register("confirmPassword")}
                   required
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition ${
-                    confirmPasswordError ? "border-pink-500 bg-pink-50" : "border-slate-200"
+                  className={`w-full p-3 border rounded-lg ${
+                    confirmPasswordError
+                      ? "border-pink-500 bg-pink-50"
+                      : "border-slate-200"
                   }`}
                   placeholder="••••••••"
                 />
+
                 {confirmPasswordError && (
                   <div className="mt-2 p-2 bg-pink-50 border border-pink-200 rounded-lg">
-                    <p className="text-xs text-pink-600">{confirmPasswordError}</p>
+                    <p className="text-xs text-pink-600">
+                      {confirmPasswordError}
+                    </p>
                   </div>
                 )}
               </div>
 
-              <div className="relative group pt-4">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-pink-500 rounded-lg blur opacity-50 group-hover:opacity-75 transition h-0"></div>
+              <div className="pt-4">
                 <button
                   type="submit"
-                  disabled={loading || passwordErrors.length > 0 || confirmPasswordError}
-                  className={`relative w-full bg-slate-900 text-white py-3 rounded-lg hover:bg-slate-800 transition font-medium ${
-                    loading || passwordErrors.length > 0 || confirmPasswordError ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  disabled={
+                    loading ||
+                    passwordErrors.length > 0 ||
+                    confirmPasswordError
+                  }
+                  className="w-full bg-slate-900 text-white py-3 rounded-lg"
                 >
                   {loading ? "Creating Account..." : "Create Account"}
                 </button>
@@ -193,11 +222,13 @@ const LoanApplication = () => {
             </form>
 
             {message && (
-              <div className={`mt-4 text-center text-sm ${
-                message.includes("Error") 
-                  ? "text-pink-600" 
-                  : "text-green-600"
-              }`}>
+              <div
+                className={`mt-4 text-center text-sm ${
+                  message.includes("Error") || message.includes("exists")
+                    ? "text-pink-600"
+                    : "text-green-600"
+                }`}
+              >
                 {message}
               </div>
             )}

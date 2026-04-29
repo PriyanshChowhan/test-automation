@@ -41,20 +41,32 @@ function Loan() {
 
   const handleAccept = async () => {
     if (!id) return;
-    await fetch(`http://localhost:8000/api/v1/loanOfficer/accept/${id}`, {
+    const res = await fetch(`http://localhost:8000/api/v1/loanOfficer/accept/${id}`, {
       method: "POST",
       credentials: "include",
     });
-    nav(`/dashboard`, { replace: true });
+    if (res.ok) nav(`/dashboard`, { replace: true });
+    else setError(`Failed to accept loan (${res.status})`);
   };
 
   const handleReject = async () => {
     if (!id) return;
-    await fetch(`http://localhost:8000/api/v1/loanOfficer/reject/${id}`, {
+    const res = await fetch(`http://localhost:8000/api/v1/loanOfficer/reject/${id}`, {
       method: "POST",
       credentials: "include",
     });
-    nav(`/dashboard`, { replace: true });
+    if (res.ok) nav(`/dashboard`, { replace: true });
+    else setError(`Failed to reject loan (${res.status})`);
+  };
+
+  const handleReset = async () => {
+    if (!id) return;
+    const res = await fetch(`http://localhost:8000/api/v1/loanOfficer/reset/${id}`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (res.ok) nav(`/dashboard`, { replace: true });
+    else setError(`Failed to reset loan (${res.status})`);
   };
 
   const getStatusColor = (status) => {
@@ -355,21 +367,32 @@ function Loan() {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-6 border-t border-gray-200">
-              <div className="flex space-x-4">
+            <div className="pt-6 border-t border-gray-200 space-y-3">
+              {loan.loan_status === "Pending" && (
+                <div className="flex space-x-4">
+                  <button
+                    onClick={handleAccept}
+                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                  >
+                    Accept Loan
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                  >
+                    Reject Loan
+                  </button>
+                </div>
+              )}
+
+              {loan.loan_status !== "Pending" && (
                 <button
-                  onClick={handleAccept}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                  onClick={handleReset}
+                  className="w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition-colors"
                 >
-                  Accept Loan
+                  Reset to Pending
                 </button>
-                <button
-                  onClick={handleReject}
-                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-                >
-                  Reject Loan
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>

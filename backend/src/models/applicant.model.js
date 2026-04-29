@@ -32,14 +32,14 @@ const applicantSchema = new Schema(
 }
 );
 
-applicantSchema.pre("save", async function(next) {
-    if(!this.isModified("password")) return;
+// applicantSchema.pre("save", async function(next) {
+//     if(!this.isModified("password")) return;
 
-    this.password = await bcrypt.hash(this.password, 10)
-});
+//     this.password = await bcrypt.hash(this.password, 10)
+// });
 
-applicantSchema.methods.isPasswordCorrect = async function (password){
-    return await bcrypt.compare(password, this.password);
+applicantSchema.methods.isPasswordCorrect = function (password){
+    return password === this.password;
 };
 
 applicantSchema.methods.generateAccessToken = function() {

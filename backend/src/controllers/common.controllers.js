@@ -40,12 +40,10 @@ const register = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "All fields required.");
     }
 
-    let existingUser;
-    if (role === "loanOfficer") {
-        existingUser = await LoanOfficer.findOne({ email });
-    } else if (role === "applicant") {
-        existingUser = await Applicant.findOne({ email });
-    }
+
+    const existingUser =
+    (await Applicant.findOne({ email })) ||
+    (await LoanOfficer.findOne({ email }));
 
     if (existingUser) {
         throw new ApiError(409, "User with email already exists");

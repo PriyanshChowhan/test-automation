@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 
 const Dashboard = () => {
@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [appliedLoans, setAppliedLoans] = useState([]);
   const [loanApplications, setLoanApplications] = useState([]);
   const nav = useNavigate();
+  const location = useLocation();
 
   // Search / filter / sort state (loan officer only)
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +65,7 @@ const Dashboard = () => {
       }
       fetchAllLoans();
     }
-  }, [role]);
+  }, [role, location.key]);
 
   const handleApply = () => nav("/applicationForm");
   const handleReviewLoan = (loanId) => nav(`/loan/${loanId}`, { replace: true });
