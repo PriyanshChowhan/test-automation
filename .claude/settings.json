@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm install *)",
-      "Bash(del \"d:\\\\Projects\\\\rinflow\\\\frontend\\\\src\\\\AnimatedLines.jsx\")"
-    ]
-  }
-}
