@@ -19,24 +19,32 @@ public class LoanApplicationTest {
     WebDriver driver;
     WebDriverWait wait;
 
-    private void loginAsApplicant() throws InterruptedException {
+    /**
+     * Logs in as an applicant and waits for the dashboard to be fully loaded
+     * before returning — prevents the test body from interacting with elements
+     * that haven't rendered yet.
+     */
+    private void loginAsApplicant() {
         driver.get("http://localhost:5173/login");
 
+        // Wait for the form before interacting (replaces blind Thread.sleep)
         WebElement email = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//input[@placeholder='you@example.com']")));
         email.sendKeys("user@gmail.com");
 
-        Thread.sleep(500); // 👈 just for visibility
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//input[@placeholder='••••••••']"))).sendKeys("User@123");
 
-        driver.findElement(By.xpath("//input[@placeholder='••••••••']"))
-                .sendKeys("User@123");
+        wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[normalize-space()='Sign in']"))).click();
 
-        Thread.sleep(500); // 👈 just for visibility
-
-        driver.findElement(By.xpath("//button[normalize-space()='Sign in']")).click();
-
+        // Wait for the actual URL change rather than sleeping a fixed duration
         wait.until(ExpectedConditions.urlContains("/dashboard"));
-        Thread.sleep(1500); // 👈 see dashboard load
+
+        // Wait for the "Apply for New Loan" button — it only renders after the getUser
+        // API call completes and role is set to "applicant"
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//button[contains(text(),'Apply for New Loan')]")));
     }
 
     @BeforeMethod
@@ -44,9 +52,7 @@ public class LoanApplicationTest {
         WebDriverManager.chromedriver().setup();
         driver = new ChromeDriver();
         driver.manage().window().maximize();
-
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-
+        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
         driver.get("http://localhost:5173/");
     }
 
@@ -71,22 +77,19 @@ public class LoanApplicationTest {
 
         loginAsApplicant();
 
-        // Click Apply button
+        // Click Apply button — wait for it to be clickable (not just visible)
         WebElement applyBtn = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//button[contains(text(),'Apply for New Loan')]")));
 
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", applyBtn);
         applyBtn.click();
 
-        Thread.sleep(1500); // 👈 see navigation happen
-
-        // Wait for form page
+        // Wait for navigation to the application form
         wait.until(ExpectedConditions.or(
                 ExpectedConditions.urlContains("/applicationform"),
-                ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@placeholder='John Doe']"))
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//input[@placeholder='John Doe']"))
         ));
-
-        Thread.sleep(1000); // 👈 see form fully loaded
 
         String currentUrl = driver.getCurrentUrl();
         System.out.println("DEBUG URL: " + currentUrl);
@@ -94,32 +97,30 @@ public class LoanApplicationTest {
         Assert.assertTrue(currentUrl.contains("application"),
                 "Should navigate to application form | URL: " + currentUrl);
 
-        // Fill form (with small pauses for visibility)
-        driver.findElement(By.xpath("//input[@placeholder='John Doe']")).sendKeys(name);
-        Thread.sleep(400);
+        // Fill form — wait for each field to be visible before sending keys
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//input[@placeholder='John Doe']"))).sendKeys(name);
 
-        driver.findElement(By.xpath("(//input[@name='dependents'])[1]")).sendKeys(dependents);
-        Thread.sleep(400);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("(//input[@name='dependents'])[1]"))).sendKeys(dependents);
 
-        new Select(driver.findElement(By.xpath("//select[.//option[@value='Graduate']]")))
-                .selectByValue(education);
-        Thread.sleep(400);
+        new Select(wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//select[.//option[@value='Graduate']]")))).selectByValue(education);
 
-        new Select(driver.findElement(By.xpath("//select[.//option[@value='true']]")))
-                .selectByValue(selfEmployed);
-        Thread.sleep(400);
+        new Select(wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//select[.//option[@value='true']]")))).selectByValue(selfEmployed);
 
-        driver.findElement(By.xpath("(//input[@name='incomeAnnum'])[1]")).sendKeys(income);
-        Thread.sleep(300);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("(//input[@name='incomeAnnum'])[1]"))).sendKeys(income);
 
-        driver.findElement(By.xpath("(//input[@name='loanAmount'])[1]")).sendKeys(loanAmount);
-        Thread.sleep(300);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("(//input[@name='loanAmount'])[1]"))).sendKeys(loanAmount);
 
-        driver.findElement(By.xpath("(//input[@name='loanTerm'])[1]")).sendKeys(loanTerm);
-        Thread.sleep(300);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("(//input[@name='loanTerm'])[1]"))).sendKeys(loanTerm);
 
-        driver.findElement(By.xpath("(//input[@name='cibilScore'])[1]")).sendKeys(cibilScore);
-        Thread.sleep(300);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("(//input[@name='cibilScore'])[1]"))).sendKeys(cibilScore);
 
         driver.findElement(By.xpath("(//input[@name='resedentialAssetValue'])[1]")).sendKeys(resiAsset);
         driver.findElement(By.xpath("(//input[@name='commercialAssetValue'])[1]")).sendKeys(commAsset);
@@ -127,21 +128,18 @@ public class LoanApplicationTest {
         driver.findElement(By.xpath("(//input[@name='bankAssetValue'])[1]")).sendKeys(bankAsset);
         driver.findElement(By.xpath("(//input[@name='debt'])[1]")).sendKeys(debt);
 
-        Thread.sleep(800); // 👈 pause before submit
-
-        // Scroll and submit
+        // Scroll to the submit button and wait for it to be clickable
         ((JavascriptExecutor) driver)
                 .executeScript("window.scrollTo(0, document.body.scrollHeight)");
 
         WebElement submitBtn = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//button[normalize-space()='Submit Application']")));
 
-        Thread.sleep(800); // 👈 see button before click
         submitBtn.click();
 
-        // Wait for redirect
+        // Wait for the POST /applicant/apply to complete and React to navigate back to
+        // dashboard — the backend responds quickly (Gemini runs in the background).
         wait.until(ExpectedConditions.urlContains("/dashboard"));
-        Thread.sleep(1500); // 👈 see result page
 
         Assert.assertTrue(driver.getCurrentUrl().contains("/dashboard"),
                 "Loan submission should redirect to dashboard");
